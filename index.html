@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foodie - Aesthetic Menu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+    .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+  <!-- Navbar -->
+  <nav class="sticky top-0 z-40 w-full glass border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <span class="text-2xl font-bold tracking-tight text-green-600">FOODIE<span class="text-slate-800">.</span></span>
+      <button onclick="toggleCart()" class="relative p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 py-12">
+    <header class="mb-12 text-center">
+      <h1 class="text-4xl font-extrabold text-slate-900 sm:text-5xl">Menu Pilihan</h1>
+      <p class="mt-4 text-lg text-slate-500">Kelezatan autentik di setiap gigitan, siap antar ke rumah Anda.</p>
+    </header>
+
+    <!-- Product Grid (Dikosongkan, akan diisi oleh JavaScript) -->
+    <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <!-- Item menu akan dirender di sini -->
+    </div>
+  </main>
+
+  <!-- Side Drawer Cart -->
+  <div id="cart-drawer" class="fixed inset-0 z-50 invisible transition-all duration-300">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="toggleCart()"></div>
+    <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl p-8 flex flex-col transform translate-x-full transition-transform duration-300" id="cart-content">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-bold">Keranjang Anda</h2>
+        <button onclick="toggleCart()" class="text-slate-400 hover:text-slate-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div id="cart-items" class="flex-1 overflow-y-auto space-y-4">
+        <!-- Items go here -->
+        <p class="text-slate-400 text-center py-10">Keranjang masih kosong...</p>
+      </div>
+
+      <div class="border-t border-slate-100 pt-6 mt-6">
+        <div class="flex justify-between text-xl font-bold mb-6">
+          <span>Total</span>
+          <span id="cart-total">Rp 0</span>
+        </div>
+        <button onclick="checkoutWhatsApp()" class="w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-lg hover:bg-green-600 transition shadow-lg shadow-green-200 flex justify-center items-center gap-2">
+          Pesan via WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- DATA MENU ---
+    const menuData = [
+      {
+        id: 1,
+        name: "Karedok",
+        description: "Kelezatan dengan rasa authentic tatar sunda.",
+        price: 10000,
+        image: "/img/Karedok.png"
+      },
+      {
+        id: 2,
+        name: "Martabak Makaroni",
+        description: "Perpanduan antara makaroni, telur dan lumpia.",
+        price: 5000,
+        image: "/img/martel.png"
+      },
+      {
+        id: 3,
+        name: "Bakso Ikan",
+        description: "Kesegaran haqiqi.",
+        price: 5000,
+        image: "/img/bakso-ikan.png"
+      },
+      {
+        id: 4,
+        name: "Karedok Basreng",
+        description: "Camilan populer khas Sunda.",
+        price: 5000,
+        image: "/img/karedok-basreng.png"
+      }
+    ];
+
+    let cart = [];
+    const phone = "6283112524889"; // Format internasional tanpa '+'
+
+    // --- RENDER MENU KE HTML ---
+    function renderMenu() {
+      const menuGrid = document.getElementById('menu-grid');
+      
+      menuGrid.innerHTML = menuData.map(item => `
+        <div class="bg-white rounded-[2rem] border border-slate-100 overflow-hidden card-hover">
+          <div class="h-56 overflow-hidden">
+            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-bold">${item.name}</h3>
+            <p class="text-slate-500 text-sm mt-2">${item.description}</p>
+            <div class="mt-6 flex items-center justify-between">
+              <span class="text-xl font-bold text-slate-900">Rp ${item.price.toLocaleString('id-ID')}</span>
+              <button onclick="addToCart('${item.name}', ${item.price})" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors">
+                + Tambah
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- LOGIKA KERANJANG ---
+    function toggleCart() {
+      const drawer = document.getElementById('cart-drawer');
+      const content = document.getElementById('cart-content');
+      drawer.classList.toggle('invisible');
+      content.classList.toggle('translate-x-full');
+    }
+
+    function addToCart(name, price) {
+      const existing = cart.find(item => item.name === name);
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ name, price, qty: 1 });
+      }
+      updateUI();
+    }
+
+    function removeFromCart(name) {
+      cart = cart.filter(item => item.name !== name);
+      updateUI();
+    }
+
+    function updateUI() {
+      const cartItems = document.getElementById('cart-items');
+      const cartCount = document.getElementById('cart-count');
+      const cartTotal = document.getElementById('cart-total');
+      
+      if (cart.length === 0) {
+        cartItems.innerHTML = `<p class="text-slate-400 text-center py-10">Keranjang masih kosong...</p>`;
+        cartCount.classList.add('hidden');
+      } else {
+        cartCount.classList.remove('hidden');
+        cartCount.innerText = cart.reduce((a, b) => a + b.qty, 0);
+        
+        cartItems.innerHTML = cart.map(item => `
+          <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
+            <div>
+              <h4 class="font-bold">${item.name}</h4>
+              <p class="text-sm text-slate-500">${item.qty} x Rp ${item.price.toLocaleString('id-ID')}</p>
+            </div>
+            <button onclick="removeFromCart('${item.name}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
+              Hapus
+            </button>
+          </div>
+        `).join('');
+      }
+
+      const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+      cartTotal.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    function checkoutWhatsApp() {
+      if (cart.length === 0) return alert("Keranjang kosong!");
+
+      let message = "*Halo, Saya mau pesan FOODIE:*\n\n";
+      cart.forEach(item => {
+        message += `- ${item.name} (${item.qty}x) = Rp ${(item.price * item.qty).toLocaleString('id-ID')}\n`;
+      });
+      
+      const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+      message += `\n*Total Tagihan: Rp ${total.toLocaleString('id-ID')}*`;
+      message += `\n\n_Mohon konfirmasi pesanan ini._`;
+
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    }
+
+    // Panggil fungsi renderMenu saat halaman pertama kali dimuat
+    renderMenu();
+  </script>
+</body>
+</html>
